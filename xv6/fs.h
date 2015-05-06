@@ -1,3 +1,6 @@
+#ifndef INCLUDE_FS_H
+#define INCLUDE_FS_H
+
 // On-disk file system format.
 // Both the kernel and user programs use this header file.
 
@@ -70,3 +73,4 @@ enum {
 
 #define E_CORRUPTED -10
 
+#endif

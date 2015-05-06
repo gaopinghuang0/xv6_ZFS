@@ -595,9 +595,9 @@ void irescue(struct inode *ip, struct inode *rinode)
 		if (n1 > max)
 			n1 = max;
 
-		begin_trans();
+		begin_op();
 		iduplicate(rinode, ip, off, n1);
-		commit_trans();
+		end_op();
 
 		off += n1;
 		i += n1;

@@ -148,12 +148,12 @@ int sys_link(void)
     }
 
     ilock_trans(ip);
-    begin_trans();
+    begin_op();
 
 
     if(ip->type == T_DIR){
         iunlockput(ip);
-        commit_trans();
+        end_op();
         return -1;
     }
 
@@ -178,7 +178,7 @@ int sys_link(void)
     iunlockput(dp);
     iput(ip);
 
-    commit_trans();
+    end_op();
 
     return 0;
 
@@ -187,7 +187,7 @@ bad:
     ip->nlink--;
     iupdate(ip);
     iunlockput(ip);
-    commit_trans();
+    end_op();
     return -1;
 }
 
@@ -226,7 +226,7 @@ int sys_unlink(void)
         return -1;
     }
 
-    begin_trans();
+    begin_op();
 
     if ((r = ilock(dp)) < 0) {
 		cprintf("ilocked failed with r = %d \n", r);
@@ -273,13 +273,13 @@ int sys_unlink(void)
     iupdate(ip);
     iunlockput(ip);
 
-    commit_trans();
+    end_op();
 
     return 0;
 
 bad:
     iunlockput(dp);
-    commit_trans();
+    end_op();
     return -1;
 }
 
@@ -368,9 +368,9 @@ int sys_open(void)
     }
 
     if(omode & O_CREATE){
-        begin_trans();
+        begin_op();
         ip = create(path, T_FILE, 1, 0);  // hgp: change major to 1
-        commit_trans();
+        end_op();
 
         if(ip == 0) {
             return -1;
@@ -426,9 +426,9 @@ int sys_forceopen(void)
 	}
 
 	if (omode & O_CREATE) {
-		begin_trans();
+		begin_op();
 		ip = create(path, T_FILE, 1, 0);  //hgp: major is 1
-		commit_trans();
+		end_op();
 
 		if (ip == 0) {  // create failed
 			return -1;
@@ -570,7 +570,7 @@ static void ipropagate(struct inode *ip)
 			n1 = max;
 		}
 
-		begin_trans();
+		begin_op();
 		if (ip->child1) {
 			ic = iget(ip->dev, ip->child1);
 			ilock_ext(ic, 0);
@@ -578,7 +578,7 @@ static void ipropagate(struct inode *ip)
 			iunlock(ic);
 		}
 
-		commit_trans();
+		end_op();
 		off += n1;
 		i += n1;
 	}
@@ -596,7 +596,7 @@ static struct inode* duplicate(char *path, int nditto)
 		return 0;
 	}
 
-	begin_trans();
+	begin_op();
 	if (nditto > 0) {
 		if (ip->child1) {
 			return 0;
@@ -612,13 +612,13 @@ static struct inode* duplicate(char *path, int nditto)
 		child2 = ialloc(ip->dev, T_DITTO);
 		ip->child2 = child2->inum;
 	}
-	commit_trans();
+	end_op();
 
 	ipropagate(ip);
-	begin_trans();
+	begin_op();
 	iupdate(ip);
 	iunlockput(ip);
-	commit_trans();
+	end_op();
 
 	return ip;
 }
@@ -642,15 +642,15 @@ int sys_mkdir(void)
     char *path;
     struct inode *ip;
 
-    begin_trans();
+    begin_op();
 
     if(argstr(0, &path) < 0 || (ip = create(path, T_DIR, 0, 0)) == 0){
-        commit_trans();
+        end_op();
         return -1;
     }
 
     iunlockput(ip);
-    commit_trans();
+    end_op();
 
     return 0;
 }
@@ -662,18 +662,18 @@ int sys_mknod(void)
     int len;
     int major, minor;
 
-    begin_trans();
+    begin_op();
 
     if((len=argstr(0, &path)) < 0 ||
             argint(1, &major) < 0 || argint(2, &minor) < 0 ||
             (ip = create(path, T_DEV, major, minor)) == 0){
 
-        commit_trans();
+        end_op();
         return -1;
     }
 
     iunlockput(ip);
-    commit_trans();
+    end_op();
 
     return 0;
 }

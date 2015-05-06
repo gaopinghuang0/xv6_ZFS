@@ -4,9 +4,6 @@
 #ifndef INCLUDE_DEFS_H
 #define INCLUDE_DEFS_H
 
-#define UMAX(a, b) ((uint)(a) > (uint)(b) ? (uint)(a):(uint)(b))
-#define UMIN(a, b) ((uint)(a) > (uint)(b) ? (uint)(b):(uint)(a))
-
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
@@ -22,27 +19,10 @@ struct file;
 struct inode;
 struct pipe;
 struct proc;
+struct rtcdate;
 struct spinlock;
 struct stat;
 struct superblock;
-struct trapframe;
-
-typedef uint32	pte_t;
-typedef uint32  pde_t;
-extern  uint32  _kernel_pgtbl;
-typedef void (*ISR) (struct trapframe *tf, int n);
-
-// arm.c
-void            set_stk(uint mode, uint addr);
-void            cli (void);
-void            sti (void);
-uint            spsr_usr();
-int             int_enabled();
-void            pushcli(void);
-void            popcli(void);
-void            getcallerpcs(void *, uint*);
-void*           get_fp (void);
-void            show_callstk (char *);
 
 
 // bio.c
@@ -51,6 +31,7 @@ struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
 
+/*
 // buddy.c
 void            kmem_init (void);
 void            kmem_init2(void *vstart, void *vend);
@@ -60,6 +41,7 @@ void            free_page(void *v);
 void*           alloc_page (void);
 void            kmem_test_b (void);
 int             get_order (uint32 v);
+*/
 
 // console.c
 void            consoleinit(void);
@@ -112,27 +94,49 @@ int 		   dist2root(char *path);
 
 // ide.c
 void            ideinit(void);
+void            ideintr(void);
 void            iderw(struct buf*);
 
+// ioapic.c
+void            ioapicenable(int irq, int cpu);
+extern uchar    ioapicid;
+void            ioapicinit(void);
+
 // kalloc.c
-/*char*           kalloc(void);
+char*           kalloc(void);
 void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
-void            kmem_init (void);*/
 
 // log.c
 void            initlog(void);
 void            log_write(struct buf*);
-void            begin_trans();
-void            commit_trans();
+void            begin_op();
+void            end_op();
+//void 			begin_trans();
+//void			commit_trans();
+
+// kbd.c
+void            kbdintr(void);
+
+// lapic.c
+void            cmostime(struct rtcdate *r);
+int             cpunum(void);
+extern volatile uint*    lapic;
+void            lapiceoi(void);
+void            lapicinit(void);
+void            lapicstartap(uchar, uint);
+void            microdelay(int);
+
+// mp.c
+extern int      ismp;
+int             mpbcpu(void);
+void            mpinit(void);
+void            mpstartthem(void);
 
 // picirq.c
-//void            pic_enable(int, ISR);
-void            gic_enable(int, ISR);
-//void            pic_init(void*);
-void            gic_init(void*);
-void            pic_dispatch (struct trapframe *tp);
+void            picenable(int);
+void            picinit(void);
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);
@@ -162,9 +166,12 @@ void            swtch(struct context**, struct context*);
 
 // spinlock.c
 void            acquire(struct spinlock*);
+void            getcallerpcs(void*, uint*);
 int             holding(struct spinlock*);
 void            initlock(struct spinlock*, char*);
 void            release(struct spinlock*);
+void            pushcli(void);
+void            popcli(void);
 
 // string.c
 int             memcmp(const void*, const void*, uint);
@@ -184,32 +191,25 @@ int             fetchstr(uint, char**);
 void            syscall(void);
 
 // timer.c
-void            timer_init(int hz);
-extern struct   spinlock tickslock;
+void            timerinit(void);
 
 // trap.c
+void            idtinit(void);
 extern uint     ticks;
-void            trap_init(void);
-void            dump_trapframe (struct trapframe *tf);
-
-// trap_asm.S
-void            trap_reset(void);
-void            trap_und(void);
-void            trap_swi(void);
-void            trap_iabort(void);
-void            trap_dabort(void);
-void            trap_na(void);
-void            trap_irq(void);
-void            trap_fiq(void);
+void            tvinit(void);
+extern struct spinlock tickslock;
 
 // uart.c
-void            uart_init(void*);
+void            uartinit(void);
+void            uartintr(void);
 void            uartputc(int);
-int             uartgetc(void);
-void            micro_delay(int us);
-void            uart_enable_rx();
 
 // vm.c
+void            seginit(void);
+void            kvmalloc(void);
+void            vmenable(void);
+pde_t*          setupkvm(void);
+char*           uva2ka(pde_t*, char*);
 int             allocuvm(pde_t*, uint, uint);
 int             deallocuvm(pde_t*, uint, uint);
 void            freevm(pde_t*);
@@ -217,10 +217,8 @@ void            inituvm(pde_t*, char*, uint);
 int             loaduvm(pde_t*, char*, struct inode*, uint, uint);
 pde_t*          copyuvm(pde_t*, uint);
 void            switchuvm(struct proc*);
+void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
-void*           kpt_alloc(void);
-void            init_vmm (void);
-void            kpt_freerange (uint32 low, uint32 hi);
-void            paging_init (uint phy_low, uint phy_hi);
+
 #endif

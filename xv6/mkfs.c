@@ -14,17 +14,22 @@
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-int nblocks = 985;
+
+#define NINODES  200
+// Disk layout:
+// [ boot block | sb block | inode blocks | bit map | data blocks | log ]
+
+int nbitmap = FSSIZE/(BSIZE * 8) + 1;
+int nblocks;  // Number of data blocks
+int nmeta;    // Number of meta blocks (inode, bitmap, and 2 extra)
 int nlog = LOGSIZE;
-int ninodes = 200;
-int size = 1024;
+int ninodeblocks = NINODES / IPB + 1;
+//int size = 2048;
 
 int fsfd;
 struct superblock sb;
-char zeroes[512];
+char zeroes[BSIZE];
 uint freeblock;
-uint usedblocks;
-uint bitblocks;
 uint freeinode = 1;
 
 void balloc(int);
@@ -68,7 +73,7 @@ main(int argc, char *argv[])
   int i, cc, fd;
   uint rootino, inum, off;
   struct dirent de;
-  char buf[512];
+  char buf[BSIZE];
   struct dinode din, din2;
   unsigned int checksum;
 
@@ -80,36 +85,36 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  assert((512 % sizeof(struct dinode)) == 0);
-  assert((512 % sizeof(struct dirent)) == 0);
+  assert((BSIZE % sizeof(struct dinode)) == 0);
+  assert((BSIZE % sizeof(struct dirent)) == 0);
 
   fsfd = open(argv[1], O_RDWR|O_CREAT|O_TRUNC, 0666);
   if(fsfd < 0){
     perror(argv[1]);
     exit(1);
   }
+  
+  nmeta = 2 + ninodeblocks + nbitmap;
+  nblocks = FSSIZE - nlog - nmeta;
 
   //Creating the super block
   //Total size of the hard disk will be 1024 sectors
-  sb.size = xint(size);
+  sb.size = xint(FSSIZE);
   // so whole disk is size sectors
   sb.nblocks = xint(nblocks);
   //200 inodes
-  sb.ninodes = xint(ninodes);
+  sb.ninodes = xint(NINODES);
   sb.nlog = xint(nlog);
 
-  //Bit blocks is the space you will need for the bitmap
-  bitblocks = size/(512*8) + 1;
   //IPB -> INODES PER BLOCK
-  usedblocks = ninodes / IPB + 3 + bitblocks;
-  freeblock = usedblocks;
+  freeblock = nmeta;  // the first free block that we can allocate
 
-  printf("used %d (bit %d ninode %zu) free %u log %u total %d\n", usedblocks,
-         bitblocks, ninodes/IPB + 1, freeblock, nlog, nblocks+usedblocks+nlog);
+  printf("nmeta %d (boot, super, inode blocks %u, bitmap blocks %u) blocks %d log %u total %d\n",
+  		nmeta, ninodeblocks, nbitmap, nblocks, nlog, FSSIZE);
 
-  assert(nblocks + usedblocks + nlog == size);
+  assert(nblocks + nmeta + nlog == xint(FSSIZE));
 
-  for(i = 0; i < nblocks + usedblocks + nlog; i++)
+  for(i = 0; i < FSSIZE; i++)
     wsect(i, zeroes);
 
   memset(buf, 0, sizeof(buf));
@@ -168,8 +173,8 @@ main(int argc, char *argv[])
       char * cbuf = (char * )buf;
       memset((void *) cbuf + cc,0,sizeof(buf) - cc);
       for(i = 0; i < sizeof(buf)/sizeof(uint); i++){
-	checksum ^= *bp;
-	bp++;
+		checksum ^= *bp;
+		bp++;
       }
       iappend(inum, buf, cc);
     }
@@ -226,7 +231,7 @@ main(int argc, char *argv[])
 
 // fprintf(stderr, "=======> JOAO: root inode checksum %x \n",xint(din.checksum));
   //writes the bitmap to fs.img
-  balloc(usedblocks);
+  balloc(freeblock);
 
   exit(0);
 }
@@ -327,8 +332,8 @@ balloc(int used)
   for(i = 0; i < used; i++){
     buf[i/8] = buf[i/8] | (0x1 << (i%8));
   }
-  printf("balloc: write bitmap block at sector %zu\n", ninodes/IPB + 3);
-  wsect(ninodes / IPB + 3, buf);
+  printf("balloc: write bitmap block at sector %zu\n", NINODES/IPB + 3);
+  wsect(NINODES / IPB + 3, buf);
 }
 
 
@@ -351,21 +356,18 @@ iappend(uint inum, void *xp, int n)
     if(fbn < NDIRECT){
       if(xint(din.addrs[fbn]) == 0){
         din.addrs[fbn] = xint(freeblock++);
-        usedblocks++;
       }
       x = xint(din.addrs[fbn]);
     } else {
       if(xint(din.addrs[NDIRECT]) == 0){
         // printf("allocate indirect block\n");
         din.addrs[NDIRECT] = xint(freeblock++);
-        usedblocks++;
       }
       // printf("read indirect block\n");
       // The address just points to a block
       rsect(xint(din.addrs[NDIRECT]), (char*)indirect);
       if(indirect[fbn - NDIRECT] == 0){
         indirect[fbn - NDIRECT] = xint(freeblock++);
-        usedblocks++;
         wsect(xint(din.addrs[NDIRECT]), (char*)indirect);
       }
       x = xint(indirect[fbn-NDIRECT]);
