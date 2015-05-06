@@ -1,4 +1,4 @@
-// On-disk file system format. 
+// On-disk file system format.
 // Both the kernel and user programs use this header file.
 
 // Block 0 is unused.
@@ -13,24 +13,28 @@
 
 // File system super block
 struct superblock {
-  uint size;         // Size of file system image (blocks)
-  uint nblocks;      // Number of data blocks
-  uint ninodes;      // Number of inodes.
-  uint nlog;         // Number of log blocks
+    uint    size;           // Size of file system image (blocks)
+    uint    nblocks;        // Number of data blocks
+    uint    ninodes;        // Number of inodes.
+    uint    nlog;           // Number of log blocks
 };
 
-#define NDIRECT 12
+#define NDIRECT 10   // change from 12 to 10
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define MAXFILE (NDIRECT + NINDIRECT)
 
 // On-disk inode structure
 struct dinode {
-  short type;           // File type
-  short major;          // Major device number (T_DEV only)
-  short minor;          // Minor device number (T_DEV only)
-  short nlink;          // Number of links to inode in file system
-  uint size;            // Size of file (bytes)
-  uint addrs[NDIRECT+1];   // Data block addresses
+    short   type;           // File type
+    short   major;          // Major device number (T_DEV only)
+    short   minor;          // Minor device number (T_DEV only)
+    short   nlink;          // Number of links to inode in file system
+    uint    size;           // Size of file (bytes)
+    uint    addrs[NDIRECT+1]; // Data block addresses
+    // add by hgp
+    short child1;
+    short child2;
+    uint checksum;
 };
 
 // Inodes per block.
@@ -49,7 +53,20 @@ struct dinode {
 #define DIRSIZ 14
 
 struct dirent {
-  ushort inum;
-  char name[DIRSIZ];
+    ushort  inum;
+    char    name[DIRSIZ];
 };
+
+
+// add for ditto-blocks
+#define DITTO_LOWER  3
+#define DITTO_HIGHER 6
+
+enum {
+	REPLICA_SELF,
+	REPLICA_CHILD_1,
+	REPLICA_CHILD_2
+} ditto_replica;
+
+#define E_CORRUPTED -10
 

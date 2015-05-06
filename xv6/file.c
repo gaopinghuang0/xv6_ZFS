@@ -72,9 +72,9 @@ fileclose(struct file *f)
   if(ff.type == FD_PIPE)
     pipeclose(ff.pipe, ff.writable);
   else if(ff.type == FD_INODE){
-    begin_op();
+    begin_trans();
     iput(ff.ip);
-    end_op();
+    commit_trans();
   }
 }
 
@@ -83,7 +83,8 @@ int
 filestat(struct file *f, struct stat *st)
 {
   if(f->type == FD_INODE){
-    ilock(f->ip);
+    if (ilock_trans(f->ip) == E_CORRUPTED)
+      return E_CORRUPTED;
     stati(f->ip, st);
     iunlock(f->ip);
     return 0;
@@ -102,7 +103,7 @@ fileread(struct file *f, char *addr, int n)
   if(f->type == FD_PIPE)
     return piperead(f->pipe, addr, n);
   if(f->type == FD_INODE){
-    ilock(f->ip);
+    ilock_trans(f->ip);
     if((r = readi(f->ip, addr, f->off, n)) > 0)
       f->off += r;
     iunlock(f->ip);
@@ -131,17 +132,26 @@ filewrite(struct file *f, char *addr, int n)
     // might be writing a device like the console.
     int max = ((LOGSIZE-1-1-2) / 2) * 512;
     int i = 0;
+
+
+    // First, call ilock_trans once to make sure that the
+    // inode we are writing to is valid.
+    if (ilock_trans(f->ip) == E_CORRUPTED) {
+      return E_CORRUPTED;
+    }
+    iunlock(f->ip);
+
     while(i < n){
       int n1 = n - i;
       if(n1 > max)
         n1 = max;
 
-      begin_op();
+      begin_trans();
       ilock(f->ip);
       if ((r = writei(f->ip, addr + i, f->off, n1)) > 0)
         f->off += r;
       iunlock(f->ip);
-      end_op();
+      commit_trans();
 
       if(r < 0)
         break;

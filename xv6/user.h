@@ -1,5 +1,4 @@
 struct stat;
-struct rtcdate;
 
 // system calls
 int fork(void);
@@ -12,6 +11,8 @@ int close(int);
 int kill(int);
 int exec(char*, char**);
 int open(char*, int);
+int forceopen(char*, int);
+int iopen(int, int);
 int mknod(char*, short, short);
 int unlink(char*);
 int fstat(int fd, struct stat*);
