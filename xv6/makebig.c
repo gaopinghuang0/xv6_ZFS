@@ -3,7 +3,7 @@
 #include "user.h"
 #include "fcntl.h"
 
-int main()
+int main(int argc , char* argv[])
 {
 	char buf[512];
 	int fd, i, sectors;
@@ -13,10 +13,10 @@ int main()
 		printf(2, "big: cannot open big.file for writing\n");
 		exit();
 	}
-
+	
 	sectors = 0;
 	while(1){
-		*(int*)buf = sectors;
+		*(int*)buf = *argv[1] ;
 		int cc = write(fd, buf, sizeof(buf));
 		if(cc <= 0)
 			break;
