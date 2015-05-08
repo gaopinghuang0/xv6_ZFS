@@ -307,9 +307,9 @@ void iupdate_ext(struct inode *ip, uint skip)
 	}
 	dip->checksum = ip->checksum;
 	memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
-	dbgprint("before log_write");
+	// dbgprint("before log_write");
 	log_write(bp);
-	dbgprint("after log_write");
+	// dbgprint("after log_write");
 	brelse(bp);
 
 	// update children
