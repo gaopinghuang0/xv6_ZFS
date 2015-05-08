@@ -69,6 +69,14 @@ int mystat_open(char *devnum, char *inum)
 	return fd;
 }
 
+void mystat(int fd)
+{
+	printf(1, "==============\n");
+	pinode(fd);
+	printf(1, "\n");
+	cat(fd);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -78,15 +86,6 @@ main(int argc, char *argv[])
 
 	if (argc < 2) {
 		printf(1, "Usage: mystat [-d DEV] [-f path] [FILE/DIR]+\n");
-		exit();
-	}
-
-	if (argc == 2) {
-		// normal case, default dev
-		fd = mystat_open(dev, argv[1]);
-		pinode(fd);
-		cat(fd);
-		close(fd);
 		exit();
 	}
 
@@ -114,18 +113,15 @@ main(int argc, char *argv[])
 				printf(1, "usage: [-f PATH] not [-f ino]\n");
 				exit();
 			}
-			pinode(fd);
-			cat(fd);
+			mystat(fd);
 			close(fd);
 			i++;  // skip the path
 		} else {  // normal case, without -f
 			fd = mystat_open(dev, argv[i]);
-			pinode(fd);
-			cat(fd);
+			mystat(fd);
 			close(fd);
 		}
 	}
-
 
 	exit();
 }
