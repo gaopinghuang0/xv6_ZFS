@@ -3,6 +3,10 @@
 #include "user.h"
 #include "fs.h"
 
+void pheader(){
+	printf(1, "path type inode size child1 child2 checksum\n");
+}
+
 char*
 fmtname(char *path)
 {
@@ -29,24 +33,30 @@ ls(char *path)
   int fd;
   struct dirent de;
   struct stat st;
+  int r;
   
   if((fd = open(path, 0)) < 0){
     printf(2, "ls: cannot open %s\n", path);
+    if (fd == E_CORRUPTED) printf(2, ": CORRUPTED\n");
     return;
   }
   
   if(fstat(fd, &st) < 0){
     printf(2, "ls: cannot stat %s\n", path);
+    if (fd == E_CORRUPTED) printf(2, ": CORRUPTED\n");
     close(fd);
     return;
   }
   
   switch(st.type){
   case T_FILE:
-    printf(1, "%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size);
+	pheader();
+    printf(1, "%s %d %d %d %d %d %x\n", fmtname(path), st.type, st.ino, st.size,
+    		st.child1, st.child2, st.checksum);
     break;
   
   case T_DIR:
+	pheader();
     if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
       printf(1, "ls: path too long\n");
       break;
@@ -59,11 +69,14 @@ ls(char *path)
         continue;
       memmove(p, de.name, DIRSIZ);
       p[DIRSIZ] = 0;
-      if(stat(buf, &st) < 0){
+      r = stat(buf, &st);
+      if(r == E_CORRUPTED || r == -E_CORRUPTED){
+    	  printf(1, "%s CORRUPTED\n", fmtname(buf));
         printf(1, "ls: cannot stat %s\n", buf);
         continue;
       }
-      printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+      printf(1, "%s %d %d %d %d %d %x\n", fmtname(buf), st.type, st.ino, st.size,
+    		  st.child1, st.child2, st.checksum);
     }
     break;
   }

@@ -1,3 +1,18 @@
+//
+// a definition of data structure/methods
+//
+#ifndef INCLUDE_DEFS_H
+#define INCLUDE_DEFS_H
+
+// number of elements in fixed-size array
+#define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+
+// hgp: for debug
+#define DEBUG
+void _dbgprint(const char *func, const char *file, char *msg);
+#define dbgprint(msg) _dbgprint(__func__,__FILE__,msg)
+
 struct buf;
 struct context;
 struct file;
@@ -9,11 +24,24 @@ struct spinlock;
 struct stat;
 struct superblock;
 
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
+
+/*
+// buddy.c
+void            kmem_init (void);
+void            kmem_init2(void *vstart, void *vend);
+void*           kmalloc (int order);
+void            kfree (void *mem, int order);
+void            free_page(void *v);
+void*           alloc_page (void);
+void            kmem_test_b (void);
+int             get_order (uint32 v);
+*/
 
 // console.c
 void            consoleinit(void);
@@ -40,17 +68,29 @@ struct inode*   dirlookup(struct inode*, char*, uint*);
 struct inode*   ialloc(uint, short);
 struct inode*   idup(struct inode*);
 void            iinit(void);
-void            ilock(struct inode*);
+int            ilock(struct inode*);
+int            ilock_ext(struct inode *, int checksum);
+int            ilock_trans(struct inode *);
 void            iput(struct inode*);
 void            iunlock(struct inode*);
 void            iunlockput(struct inode*);
 void            iupdate(struct inode*);
+void           iupdate_ext(struct inode*, uint skip);
+void           cupdate(struct inode*, struct inode*);
+void           irescue(struct inode*, struct inode*);
+void           iduplicate(struct inode*, struct inode*, uint, uint);
 int             namecmp(const char*, const char*);
-struct inode*   namei(char*);
-struct inode*   nameiparent(char*, char*);
+struct inode*	namei(char*);
+struct inode*	nameiparent(char*, char*);
+struct inode*  namei_ext(char*, int);
+struct inode*  nameiparent_ext(char*, char*, int);
+struct inode*  namei_trans(char*);
+struct inode*  nameiparent_trans(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
+int            writei_ext(struct inode*, char*, uint, uint, uint);
+int 		   dist2root(char *path);
 
 // ide.c
 void            ideinit(void);
@@ -68,6 +108,14 @@ void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
 
+// log.c
+void            initlog(void);
+void            log_write(struct buf*);
+void            begin_op();
+void            end_op();
+//void 			begin_trans();
+//void			commit_trans();
+
 // kbd.c
 void            kbdintr(void);
 
@@ -79,12 +127,6 @@ void            lapiceoi(void);
 void            lapicinit(void);
 void            lapicstartap(uchar, uint);
 void            microdelay(int);
-
-// log.c
-void            initlog(void);
-void            log_write(struct buf*);
-void            begin_op();
-void            end_op();
 
 // mp.c
 extern int      ismp;
@@ -179,5 +221,4 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 
-// number of elements in fixed-size array
-#define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+#endif

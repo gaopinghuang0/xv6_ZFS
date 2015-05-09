@@ -29,3 +29,8 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(iopen)
+SYSCALL(ichecksum)
+SYSCALL(duplicate)
+SYSCALL(forceopen)
+
