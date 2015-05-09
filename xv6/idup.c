@@ -9,7 +9,7 @@ main(int argc, char *argv[])
 {
 
   int r;
-  if(argc < 3){
+  if(argc < 3 || isnum(argv[1])){
     printf(1, "usage: idup [PATH] [ndittos: 1 or 2]\n");
     exit();
   }
@@ -22,7 +22,6 @@ main(int argc, char *argv[])
 
 	  exit();
   }
-
 
 
   if(hasdittos(argv[1]) == 0){  // useful function, so defined in ulib.c

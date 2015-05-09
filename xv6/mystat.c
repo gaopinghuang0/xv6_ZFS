@@ -2,40 +2,8 @@
 #include "stat.h"
 #include "user.h"
 #include "fs.h"
-#include "ctype.h"
 
 char buf[512];
-
-// judge whether str is a pure number, return 0 if not
-int isnum(char *str)
-{
-
-	return 0;
-}
-
-// judge whether str is a string, return 0 if not
-int isstr(char *str)
-{
-	return 0;
-}
-
-// return the number of strings in cmdline
-// exclude string starting with hyphen '-'
-int cmd_has_str(int argc, char *cmd[])
-{
-	int i;
-	int counter = 0;
-
-	for (i=1; i < argc; i++) {
-		if (argv[i][0] == '-' && isargv[i][1])
-
-		if (isstr(argv[i])) {
-
-		}
-	}
-
-	return counter;
-}
 
 void
 cat(int fd)
