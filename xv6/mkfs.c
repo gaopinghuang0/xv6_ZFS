@@ -15,7 +15,7 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 
-#define NINODES  200
+#define NINODES  300
 // Disk layout:
 // [ boot block | sb block | inode blocks | bit map | data blocks | log ]
 
