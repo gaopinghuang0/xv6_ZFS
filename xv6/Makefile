@@ -176,8 +176,8 @@ UPROGS=\
 	_makebig\
 	_idup\
 
-fs.img: mkfs README $(UPROGS) make3file
-	./mkfs fs.img README $(UPROGS) make3file
+fs.img: mkfs README $(UPROGS) catmakefile 
+	./mkfs fs.img README $(UPROGS) catmakefile
 
 -include *.d
 
