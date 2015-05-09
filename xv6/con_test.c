@@ -23,6 +23,7 @@ int main(){
 		int pp = write(fd2, buf2, sizeof(buf2));
 		if(pp<=0)exit();
 		close(fd2);
+		wait();
      }
     
      exit();
