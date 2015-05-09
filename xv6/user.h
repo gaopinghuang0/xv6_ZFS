@@ -24,6 +24,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int duplicate(char*, int);
 
 // ulib.c
 int stat(char*, struct stat*);
@@ -38,3 +39,5 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+int parse_cmd(int argc, char *cmd[], const char *pattern);
+int hasdittos(char *path);

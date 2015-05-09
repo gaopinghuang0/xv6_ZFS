@@ -103,3 +103,31 @@ memmove(void *vdst, void *vsrc, int n)
     *dst++ = *src++;
   return vdst;
 }
+
+// return index of cmd if exists pattern
+// or return 0 if not exists pattern
+int parse_cmd(int argc, char *cmd[], const char *pattern)
+{
+	int i;
+
+	for (i=1; i < argc; i++) {
+		if (strcmp(cmd[i], pattern) == 0) {
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+int hasdittos(char *path)
+{
+	int fd;
+	struct stat st;
+	fd = forceopen(path, O_RDONLY);
+	fstat(fd, &st);
+	close(fd);
+	printf(1, "st.child1=%u\n", st.child1);
+	return st.child1 > 0 ? 1 : 0;
+}
+
+
