@@ -147,6 +147,11 @@ _forktest: forktest.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
 	$(OBJDUMP) -S _forktest > forktest.asm
 
+_uthread: uthread.o uthread_switch.o
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _uthread uthread.o uthread_switch.o $(ULIB)
+	$(OBJDUMP) -S _uthread > uthread.asm
+
+
 mkfs: mkfs.c fs.h
 	gcc -Werror -Wall -o mkfs mkfs.c
 
@@ -174,7 +179,9 @@ UPROGS=\
 	_zombie\
 	_mystat\
 	_makebig\
+	_con_test\
 	_idup\
+	_uthread\
 
 fs.img: mkfs README $(UPROGS) catmakefile 
 	./mkfs fs.img README $(UPROGS) catmakefile
@@ -213,6 +220,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 1
 endif
+
 QEMUOPTS = -hdb fs.img xv6.img -smp $(CPUS) -m 512 $(QEMUEXTRA) #-snapshot
 
 qemu: fs.img xv6.img

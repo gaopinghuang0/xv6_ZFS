@@ -145,7 +145,6 @@ void
 end_op(void)
 {
   int do_commit = 0;
-
   acquire(&log.lock);
   log.outstanding -= 1;
   if(log.committing)
@@ -189,8 +188,9 @@ write_log(void)
 static void
 commit()
 {
-  if (log.lh.n > 0) {
-    write_log();     // Write modified blocks from cache to log
+	if (log.lh.n > 0) {
+	cprintf("in commit\n");
+	write_log();     // Write modified blocks from cache to log
     write_head();    // Write header to disk -- the real commit
     install_trans(); // Now install writes to home locations
     log.lh.n = 0; 
