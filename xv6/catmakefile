@@ -1,0 +1,7 @@
+# Usage: cat catmakefile | sh
+echo "This is some seed string" > seed
+cat seed > smallfile
+cat seed seed > mediumfile
+cat seed seed seed > largefile
+cat README README > 2readme
+

@@ -103,3 +103,77 @@ memmove(void *vdst, void *vsrc, int n)
     *dst++ = *src++;
   return vdst;
 }
+
+int hasdittos(char *path)
+{
+	int fd;
+	struct stat st;
+	fd = forceopen(path, O_RDONLY);
+	fstat(fd, &st);
+	close(fd);
+	//printf(1, "st.child1=%d\n", st.child1);
+	return st.child1 > 0 ? 1 : 0;
+}
+
+static inline int isdigit(int ch)
+{
+	return (ch >= '0') && (ch <= '9');
+}
+
+static inline int isalpha(int ch)
+{
+	return ((ch >= 'A') && (ch <= 'Z')) || ((ch >= 'a') && (ch <= 'z'));
+}
+
+// judge whether str is a pure number, return 0 if not
+int isnum(char *s)
+{
+	for(; *s; s++)
+		if(!isdigit(*s))
+			return 0;
+	return 1;
+}
+
+// judge whether str is a string, return 0 if not
+int isstr(char *s)
+{
+	for(; *s; s++)
+		if(isalpha(*s))
+			return 1;
+	return 0;
+}
+
+// return the number of strings in cmdline
+// exclude string starting with hyphen '-'
+int cmd_has_str(int argc, char *cmd[])
+{
+	int i;
+	int counter = 0;
+
+	for (i=1; i < argc; i++) {
+		if (cmd[i][0] == '-' && isalpha(cmd[i][1])) {  // skip -[*]
+			continue;
+		}
+
+		if (isstr(cmd[i])) {
+			counter++;
+		}
+	}
+
+	return counter;
+}
+
+// return index of cmd if exists pattern
+// or return 0 if not exists pattern
+int parse_cmd(int argc, char *cmd[], const char *pattern)
+{
+	int i;
+
+	for (i=1; i < argc; i++) {
+		if (strcmp(cmd[i], pattern) == 0) {
+			return i;
+		}
+	}
+
+	return 0;
+}

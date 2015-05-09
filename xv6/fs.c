@@ -302,14 +302,14 @@ void iupdate_ext(struct inode *ip, uint skip)
 	dip->child1 = ip->child1;
 	dip->child2 = ip->child2;
 	ip->checksum = ichecksum(ip);
-	if (ip->checksum != dip->checksum) {
-		cprintf("update checksum of inode %d from %x to %x.\n", ip->inum, dip->checksum, ip->checksum);
-	}
+//	if (ip->checksum != dip->checksum) {
+//		cprintf("update checksum of inode %d from %x to %x.\n", ip->inum, dip->checksum, ip->checksum);
+//	}
 	dip->checksum = ip->checksum;
 	memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
-	dbgprint("before log_write");
+	// dbgprint("before log_write");
 	log_write(bp);
-	dbgprint("after log_write");
+	// dbgprint("after log_write");
 	brelse(bp);
 
 	// update children

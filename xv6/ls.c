@@ -3,10 +3,6 @@
 #include "user.h"
 #include "fs.h"
 
-void pheader(){
-	printf(1, "path type inode size child1 child2 checksum\n");
-}
-
 char*
 fmtname(char *path)
 {
@@ -24,6 +20,10 @@ fmtname(char *path)
   memmove(buf, p, strlen(p));
   memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
   return buf;
+}
+
+void pheader(){
+	printf(1, "%s type ino sz ch1 ch2 chksm\n", fmtname("path"));
 }
 
 void

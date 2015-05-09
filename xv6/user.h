@@ -24,6 +24,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int duplicate(char*, int);
 
 // ulib.c
 int stat(char*, struct stat*);
@@ -38,3 +39,9 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+int hasdittos(char *path);
+// in ulib.c, but is the same as mystring.c
+int cmd_has_str(int argc, char *cmd[]);
+int isnum(char *s);
+int isstr(char *s);
+int parse_cmd(int argc, char *cmd[], const char *pattern);
