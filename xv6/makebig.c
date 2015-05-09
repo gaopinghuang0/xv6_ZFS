@@ -1,50 +1,60 @@
-#include "types.h"
-#include "stat.h"
-#include "user.h"
-#include "fcntl.h"
+#include"types.h"
+#include"stat.h"
+#include"user.h"
+#include"fcntl.h"
 
-int main()
+int main(int argc, char* argv[])
 {
-	char buf[512];
-	int fd, i, sectors;
+	char buf1[512];
+	char buf2[512];
+	char buf3[512];
+	int fd1,fd2,fd3;
+	int size1, size2, size3;
+	int i,j,k;
 
-	fd = open("big.file", O_CREATE | O_WRONLY);
-	if(fd < 0){
-		printf(2, "big: cannot open big.file for writing\n");
+	fd1 = open("big.file", O_CREATE | O_WRONLY);
+	if(fd1<0){
+		printf(2,"big: can't open big.file for writing \n");
 		exit();
 	}
-
-	sectors = 0;
-	while(1){
-		*(int*)buf = sectors;
-		int cc = write(fd, buf, sizeof(buf));
-		if(cc <= 0)
-			break;
-		sectors++;
-		if (sectors % 100 == 0)
-			printf(2, ".");
-	}
-
-	printf(1, "\nwrote %d sectors\n", sectors);
-
-	close(fd);
-	fd = open("big.file", O_RDONLY);
-	if(fd < 0){
-		printf(2, "big: cannot re-open big.file for reading\n");
-		exit();
-	}
-	for(i = 0; i < sectors; i++){
-		int cc = read(fd, buf, sizeof(buf));
-		if(cc <= 0){
-			printf(2, "big: read error at sector %d\n", i);
+	fd2 = open("medium.file", O_CREATE | O_WRONLY);
+	if(fd2<0){
+			printf(2,"medium: can't open medium.file for writing \n");
 			exit();
 		}
-		if(*(int*)buf != i){
-			printf(2, "big: read the wrong data (%d) for sector %d\n",
-					*(int*)buf, i);
+	fd3 = open("small.file", O_CREATE | O_WRONLY);
+	if(fd3<0){
+			printf(2,"small: can't open small.file for writing \n");
 			exit();
 		}
+	size1 = 140;
+	size2 = 70;
+	size3 = 35;
+	// this is big file
+	for(i=0;i<size1;i++){
+		*(int*)buf1 = *argv[1];
+	int bb = write(fd1,buf1,sizeof(buf1));
+	if(bb<=0)
+		break;
 	}
+	// this is medium file
+	for(j=0;j<size2;j++){
+		*(int*)buf2 = *argv[1];
+	int mm = write(fd2,buf2,sizeof(buf2));
+	if(mm<0)
+		break;
+	}
+	// this is small file
+	for(k=0;k<size3;k++){
+		*(int*)buf3 = *argv[1];
+	int ss = write(fd3,buf3,sizeof(buf3));
+	if(ss<0)
+		break;
 
+	}
+	close(fd1);
+	close(fd2);
+	close(fd3);
 	exit();
+
 }
