@@ -61,6 +61,7 @@ void mystat(int fd)
 	pinode(fd);
 	printf(1, "\n");
 	cat(fd);
+	printf(1, "\n");
 }
 
 int
@@ -70,8 +71,8 @@ main(int argc, char *argv[])
 	char *dev = "1";  // default dev is 1, unless set by -d DEV
 	int fd;
 
-	if (argc < 2) {
-		printf(1, "Usage: mystat [-d DEV] [-f path] [FILE/DIR]+\n");
+	if (argc < 2 || cmd_has_str(argc, argv)) {
+		printf(1, "Usage: mystat [-d DEV] [-f path] [inum]+\n");
 		exit();
 	}
 

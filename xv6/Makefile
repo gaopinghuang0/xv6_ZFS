@@ -172,12 +172,12 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_makebig\
 	_mystat\
+	_makebig\
 	_idup\
 
-fs.img: mkfs README $(UPROGS)
-	./mkfs fs.img README $(UPROGS)
+fs.img: mkfs README $(UPROGS) make3file
+	./mkfs fs.img README $(UPROGS) make3file
 
 -include *.d
 

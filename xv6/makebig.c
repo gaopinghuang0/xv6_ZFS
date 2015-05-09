@@ -3,6 +3,24 @@
 #include"user.h"
 #include"fcntl.h"
 
+
+#define BIGFILESIZE  15
+#define MIDIUMFILESIZE  10
+#define SMALLFILESIZE  5
+
+
+char* fill_buf(char *buf, char *s, int size)
+{
+	int i, j;
+	char *cbuf = buf;
+	for (i = 0; i < size; i += strlen(s)) {
+		for (j = 0; j < strlen(s); j++) {
+			cbuf[i+j] = s[j];
+		}
+	}
+	return (char *)buf;
+}
+
 void print_buf(char buf[], int size)
 {
 	int i;
@@ -13,62 +31,38 @@ void print_buf(char buf[], int size)
 
 int main(int argc, char* argv[])
 {
-	char buf1[512];
-	char buf2[512];
-	char buf3[512];
-	int fd1,fd2,fd3;
-	int size1, size2, size3;
-	int i,j,k;
+	char buf[512];
+	int fd;
+	int size[3] = {BIGFILESIZE, MIDIUMFILESIZE, SMALLFILESIZE};
+	char *filename[3] = {"big.file", "medium.file", "small.file"};
+	int i, j, k;
 
-	fd1 = open("big.file", O_CREATE | O_WRONLY);
-	if(fd1<0){
-		printf(2,"big: can't open big.file for writing \n");
+	if (argc < 2) {
+		printf(1, "Usage: makebig [char]\n");
 		exit();
 	}
-	size1 = 2;
-	size2 = 2;
-	size3 = 1;
-	// this is big file
-	for(i=0;i<size1;i++){
-		*(int*)buf1 = 5;
-		printf(1, "fd1\n");
-		print_buf(buf1, sizeof(buf1));
-		int bb = write(fd1,buf1,sizeof(buf1));
-		if(bb<=0)
-			break;
-	}
-	close(fd1);
-	// this is medium file
-	fd2 = open("medium.file", O_CREATE | O_WRONLY);
-	if(fd2<0){
-			printf(2,"medium: can't open medium.file for writing \n");
-			exit();
-		}
-	for(j=0;j<size2;j++){
-		*(int*)buf2 = j;
-		printf(1, "fd2\n");
-		print_buf(buf2, sizeof(buf2));
-		int mm = write(fd2,buf2,sizeof(buf2));
-		if(mm<=0)
-			break;
-	}
-	close(fd2);
-	// this is small file
-	fd3 = open("small.file", O_CREATE | O_WRONLY);
-	if(fd3<0){
-			printf(2,"small: can't open small.file for writing \n");
-			exit();
-		}
-	for(k=0;k<size3;k++){
-		*(int*)buf3 = *argv[1];
-		printf(1, "fd3\n");
-		print_buf(buf3, sizeof(buf3));
-		int ss = write(fd3,buf3,sizeof(buf3));
-		if(ss<=0)
-			break;
 
+	for (i = 0; i < 3; i++) {
+		fd = open(filename[i], O_CREATE | O_WRONLY);
+		if (fd < 0) {
+			printf(2, "creating %dth file falied\n", i);
+			close(fd);
+			continue;  // skip current file
+		}
+		for (j = 0; j < size[i]; j++) {
+			for(k = 0; k < sizeof(buf); k++){
+			    buf[k] = 'a' + ((i+j+k)*(int)argv[1] % 26); // generate unregular char
+			}
+			// introduce unexpected char
+			*(int*)buf = (int)argv[1] % (1 + j);
+			// fill_buf(buf, argv[1], sizeof(buf));
+			// print_buf(buf, sizeof(buf));
+			int cc = write(fd, buf, sizeof(buf));
+			if (cc <= 0) break;
+		}
+		close(fd);
 	}
-	close(fd3);
+
 	exit();
 
 }
