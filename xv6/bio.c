@@ -27,14 +27,52 @@
 #include "fs.h"
 #include "buf.h"
 
-struct {
-  struct spinlock lock;
-  struct buf buf[NBUF];
-
-  // Linked list of all buffers, through prev/next.
-  // head.next is most recently used.
-  struct buf head;
+// A Queue (A LRU collection of cache block)
+struct Queue {
+	struct spinlock lock;
+	struct buf buf[NBUF];
+	uint count;  // Number of filled blocks
+	struct buf *front, *rear;
 } bcache;
+
+// A hash table (Collection of pointers to cache block)
+typedef struct Hash_t {
+  uint capacity;  // how many blocks in total
+  struct buf **htable;  // an array of buf nodes
+} Hash_t;
+
+Hash_t *hash_t;
+// TODO: use open addressing, Robin Hood Hashing
+
+// hash function
+static inline uint hash(uint blockno)
+{
+	return _hash_func(blockno, (uint)HASHSIZE);
+}
+
+// hash function helper
+static inline uint _hash_func(uint blockno, uint hashsize)
+{
+	return blockno % hashsize;
+}
+
+// A utility function to create an empty Hash of given capacity
+void initHash(void)
+{
+	// allocate memory for hash table
+	hash_t = (Hash_t *) malloc(sizeof(Hash_t));
+	hash_t->capacity = (uint)HASHSIZE;
+
+	// create an array of pointers for refering cache blocks
+	hash_t->htable = (struct buf **)malloc(hash_t->capacity * sizeof(struct buf *));
+
+	// initialize all hash entries as empty
+	int i;
+	for (i=0; i<hash_t->capacity; i++)
+		hash_t->htable[i] = NULL;
+}
+
+
 
 void
 binit(void)
@@ -44,7 +82,11 @@ binit(void)
   initlock(&bcache.lock, "bcache");
 
 //PAGEBREAK!
-  // Create linked list of buffers
+  // Create empty queue of buffers
+  bcache->count = 0;
+  bcache->front = bcache->rear = NULL;
+
+  initHash();
   bcache.head.prev = &bcache.head;
   bcache.head.next = &bcache.head;
   for(b = bcache.buf; b < bcache.buf+NBUF; b++){
@@ -140,6 +182,9 @@ brelse(struct buf *b)
 
   release(&bcache.lock);
 }
+
+
+
 //PAGEBREAK!
 // Blank page.
 
