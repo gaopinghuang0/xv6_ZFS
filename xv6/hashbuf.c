@@ -30,6 +30,7 @@ typedef struct Hash
 
 
 Hash *hash;
+Queue q;
 
 // A utility function to create a new Queue Node. The queue Node
 // will store the given 'pageNumber'
@@ -47,16 +48,16 @@ QNode* newQNode( unsigned pageNumber )
 
 // A utility function to create an empty Queue.
 // The queue can have at most 'numberOfFrames' nodes
-Queue* createQueue( int numberOfFrames )
+Queue createQueue(int numberOfFrames )
 {
-    Queue* queue = (Queue *)malloc( sizeof( Queue ) );
+    Queue queue;
 
     // The queue is empty
-    queue->count = 0;
-    queue->front = queue->rear = NULL;
+    queue.count = 0;
+    queue.front = queue.rear = NULL;
 
     // Number of frames that can be stored in memory
-    queue->numberOfFrames = numberOfFrames;
+    queue.numberOfFrames = numberOfFrames;
 
     return queue;
 }
@@ -152,7 +153,7 @@ void Enqueue( Queue* queue, Hash* hash, unsigned pageNumber )
 // 1. Frame is not there in memory, we bring it in memory and add to the front
 //    of queue
 // 2. Frame is there in memory, we move the frame to front of queue
-void ReferencePage( Queue* queue, Hash* hash, unsigned pageNumber )
+void ReferencePage( Queue* queue, unsigned pageNumber )
 {
     QNode* reqPage = hash->array[ pageNumber ];
 
@@ -189,32 +190,37 @@ void ReferencePage( Queue* queue, Hash* hash, unsigned pageNumber )
     }
 }
 
+void hashinit(void)
+{
+    // Let 10 different pages can be requested (pages to be
+    // referenced are numbered from 0 to 9
+    hash = createHash(10 );
+}
+
 // Driver program to test above functions
 int main()
 {
     // Let cache can hold 4 pages
-    Queue* q = createQueue( 4 );
-
-    // Let 10 different pages can be requested (pages to be
-    // referenced are numbered from 0 to 9
-    hash = createHash(10 );
+    // Queue* q = createQueue( 4 );
+    q = createQueue(4);
+    hashinit();
 
     // Let us refer pages 1, 2, 3, 1, 4, 5, 11
-    ReferencePage( q, hash, 1);
-    ReferencePage( q, hash, 2);
-    ReferencePage( q, hash, 3);
-    ReferencePage( q, hash, 1);
-    ReferencePage( q, hash, 4);
-    ReferencePage( q, hash, 5);
+    ReferencePage( &q, 1);
+    ReferencePage( &q, 2);
+    ReferencePage( &q, 3);
+    ReferencePage( &q, 1);
+    ReferencePage( &q, 4);
+    ReferencePage( &q, 5);
 
     // Let us print cache frames after the above referenced pages
-    printf ("%d ", q->front->pageNumber);
-    printf ("%d ", q->front->next->pageNumber);
-    printf ("%d ", q->front->next->next->pageNumber);
-    printf ("%d ", q->front->next->next->next->pageNumber);
+    printf ("%d ", q.front->pageNumber);
+    printf ("%d ", q.front->next->pageNumber);
+    printf ("%d ", q.front->next->next->pageNumber);
+    printf ("%d ", q.front->next->next->next->pageNumber);
 
     // add by [hgp]
-    printf("\nhead %d and rear %d\n", q->front->pageNumber, q->rear->pageNumber);
+    printf("\nhead %d and rear %d\n", q.front->pageNumber, q.rear->pageNumber);
 
     return 0;
 }
