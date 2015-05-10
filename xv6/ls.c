@@ -36,14 +36,17 @@ ls(char *path)
   int r;
   
   if((fd = open(path, 0)) < 0){
-    printf(2, "ls: cannot open %s\n", path);
-    if (fd == E_CORRUPTED) printf(2, ": CORRUPTED\n");
+    printf(2, "ls: cannot open %s", path);
+    if (fd == E_CORRUPTED) printf(2, ": CORRUPTED");
+    printf(2, "\n");
     return;
   }
   
-  if(fstat(fd, &st) < 0){
-    printf(2, "ls: cannot stat %s\n", path);
-    if (fd == E_CORRUPTED) printf(2, ": CORRUPTED\n");
+  if((r = fstat(fd, &st)) < 0){
+	printf(2, "ls: cannot stat %s", path);
+	if (r == E_CORRUPTED)
+		printf(2, ": CORRUPTED");
+	printf(2, "\n");
     close(fd);
     return;
   }
@@ -70,8 +73,10 @@ ls(char *path)
       memmove(p, de.name, DIRSIZ);
       p[DIRSIZ] = 0;
       r = stat(buf, &st);
-      if(r == E_CORRUPTED || r == -E_CORRUPTED){
-    	  printf(1, "%s CORRUPTED\n", fmtname(buf));
+      if (r == E_CORRUPTED || r == -E_CORRUPTED) {
+      	printf(1, "%s CORRUPTED\n", fmtname(buf));
+				continue;
+	  } else if (r < 0){
         printf(1, "ls: cannot stat %s\n", buf);
         continue;
       }

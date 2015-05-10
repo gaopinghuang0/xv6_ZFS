@@ -27,14 +27,56 @@
 #include "fs.h"
 #include "buf.h"
 
+// A Queue (A LRU collection of Queue Nodes)
 struct {
-  struct spinlock lock;
-  struct buf buf[NBUF];
+	struct spinlock lock;
+	struct buf buf[NBUF];
 
-  // Linked list of all buffers, through prev/next.
-  // head.next is most recently used.
-  struct buf head;
+	struct buf head;
 } bcache;
+
+// A hash table (Collection of pointers to cache block)
+typedef struct Hash_t {
+  uint capacity;  // how many blocks in total
+  struct buf *htable[HASHSIZE];  // an array of buf nodes
+} Hash_t;
+
+Hash_t hash_t;
+
+// hash function
+static uint hash_func(uint blockno)
+{
+
+	uint bval = blockno % hash_t.capacity;
+	return bval;
+}
+
+// A utility function to create an empty Hash of given capacity
+void initHash(void)
+{
+	// allocate memory for hash table
+	hash_t.capacity = (uint)HASHSIZE;
+
+	// initialize all hash entries as empty
+	int i;
+	for (i=0; i<hash_t.capacity; i++)
+		hash_t.htable[i] = NULL;
+}
+
+
+static struct buf* blookup(uint dev, uint blockno)
+{
+	//dbgprint("before lookup");
+	struct buf *b;
+	uint bval = hash_func(blockno);
+	b = hash_t.htable[bval];
+	// TODO: handle collision and wander to next location
+	if (b != NULL && b->dev == dev && b->blockno == blockno) {
+		return b;
+	}
+
+	return NULL;
+}
 
 void
 binit(void)
@@ -44,17 +86,21 @@ binit(void)
   initlock(&bcache.lock, "bcache");
 
 //PAGEBREAK!
-  // Create linked list of buffers
-  bcache.head.prev = &bcache.head;
-  bcache.head.next = &bcache.head;
-  for(b = bcache.buf; b < bcache.buf+NBUF; b++){
-    b->next = bcache.head.next;
-    b->prev = &bcache.head;
-    b->dev = -1;
-    bcache.head.next->prev = b;
-    bcache.head.next = b;
-  }
+  initHash();
+  cprintf("hash_t size=%d\n", hash_t.capacity);
+  //PAGEBREAK!
+    // Create linked list of buffers
+    bcache.head.prev = &bcache.head;
+    bcache.head.next = &bcache.head;
+    for(b = bcache.buf; b < bcache.buf+NBUF; b++){
+      b->next = bcache.head.next;
+      b->prev = &bcache.head;
+      b->dev = -1;
+      bcache.head.next->prev = b;
+      bcache.head.next = b;
+    }
 }
+
 
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
@@ -68,30 +114,34 @@ bget(uint dev, uint blockno)
 
  loop:
   // Is the block already cached?
-  for(b = bcache.head.next; b != &bcache.head; b = b->next){
-    if(b->dev == dev && b->blockno == blockno){
-      if(!(b->flags & B_BUSY)){
-        b->flags |= B_BUSY;
-        release(&bcache.lock);
-        return b;
-      }
-      sleep(b, &bcache.lock);
-      goto loop;
-    }
-  }
+	b = blookup(dev, blockno);
+	if (b != NULL) {  // cached
+	  if(!(b->flags & B_BUSY)){
+		b->flags |= B_BUSY;
+		release(&bcache.lock);
+		return b;
+	  }
+	  sleep(b, &bcache.lock);
+	  goto loop;
+	}
 
-  // Not cached; recycle some non-busy and clean buffer.
+  // Not cached; enqueue to queue and hash table,
+  // recycle and return new buf.
   // "clean" because B_DIRTY and !B_BUSY means log.c
   // hasn't yet committed the changes to the buffer.
-  for(b = bcache.head.prev; b != &bcache.head; b = b->prev){
-    if((b->flags & B_BUSY) == 0 && (b->flags & B_DIRTY) == 0){
-      b->dev = dev;
-      b->blockno = blockno;
-      b->flags = B_BUSY;
-      release(&bcache.lock);
-      return b;
-    }
-  }
+	for(b = bcache.head.next; b != &bcache.head; b = b->next) {
+		if((b->flags & B_BUSY) == 0 && (b->flags & B_DIRTY) == 0){
+			// add to hash table
+			b->dev = dev;
+			b->blockno = blockno;
+			b->flags = B_BUSY;
+			// TODO: insert b into hashtable
+			hash_t.htable[hash_func(blockno)] = b;
+			release(&bcache.lock);
+			return b;
+		}
+	}
+
   panic("bget: no buffers");
 }
 
@@ -135,11 +185,14 @@ brelse(struct buf *b)
   bcache.head.next->prev = b;
   bcache.head.next = b;
 
+
   b->flags &= ~B_BUSY;
   wakeup(b);
 
   release(&bcache.lock);
 }
+
+
 //PAGEBREAK!
 // Blank page.
 

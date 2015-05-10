@@ -579,6 +579,16 @@ static void ipropagate(struct inode *ip)
 		}
 
 		end_op();
+
+		begin_op();
+		  if (ip->child2) {
+			ic = iget(ip->dev, ip->child2);
+			ilock_ext(ic, 0);
+			iduplicate(ip, ic, off, n1);
+			iunlock(ic);
+		  }
+		end_op();
+
 		off += n1;
 		i += n1;
 	}

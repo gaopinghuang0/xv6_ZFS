@@ -481,10 +481,12 @@ i_verify:
 			replica++;
 
 			// check whether replica exists
-			if (replica == REPLICA_CHILD_1)
+			if (replica == REPLICA_CHILD_1) {
 				rinum = ip->child1;
-			else if (replica == REPLICA_CHILD_2)
+			}
+			else if (replica == REPLICA_CHILD_2) {
 				rinum = ip->child2;
+			}
 			else
 				goto i_failure;
 
@@ -493,6 +495,11 @@ i_verify:
 
 			// get a lock
 			rinode = iget(ip->dev, rinum);
+
+			// check whether has the same checksum
+			if (ip->checksum != ichecksum(rinode)) {
+				goto i_verify;
+			}
 
 			if (ilock(rinode) == 0) {
 				iunlock(rinode);
@@ -505,12 +512,12 @@ i_verify:
 		}
 
 i_failure:
-		cprintf("============================\n");
-		cprintf("The inum: %d \n", ip->inum);
-		cprintf("Inode Type: %d \n", ip->type);
-		cprintf("Checksum in inode: %x \n",ip->checksum);
-		cprintf("Computed checksum: %x \n", ichecksum(ip));
-		cprintf("============================\n");
+//		cprintf("============================\n");
+//		cprintf("The inum: %d \n", ip->inum);
+//		cprintf("Inode Type: %d \n", ip->type);
+//		cprintf("Checksum in inode: %x \n",ip->checksum);
+//		cprintf("Computed checksum: %x \n", ichecksum(ip));
+//		cprintf("============================\n");
 		iunlock(ip);
 		return E_CORRUPTED;
 
